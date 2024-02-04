@@ -1,0 +1,197 @@
+--1
+CREATE DATABASE VegetablesAndFruitsDB
+
+CREATE TABLE VegetablesAndFruits (
+    Id INT PRIMARY KEY IDENTITY,
+    Name NVARCHAR(100),
+    Type NVARCHAR(50),
+    Color NVARCHAR(50),
+    Calories INT
+)
+
+
+INSERT INTO VegetablesAndFruits (Name, Type, Color, Calories) VALUES 
+('Яблоко', 'фрукт', 'красный', 52),
+('Банан', 'фрукт', 'желтый', 89),
+('Морковь', 'овощ', 'оранжевый', 41),
+('Помидор', 'овощ', 'красный', 18)
+
+
+--2
+string connectionString = "Data Source=LAPTOP-8HJ85GUS\\ODESI;Initial Catalog=VegetablesAndFruitsDBe;Integrated Security=True;";
+
+		using (SqlConnection connection = new SqlConnection(connectionString))
+		{
+			try
+			{
+				connection.Open();
+				Console.WriteLine("Підключення пройшло успішно");
+			}
+			catch (Exception e)
+			{
+
+				Console.WriteLine($"Помилка підклченняж {e.Message}");
+			}
+
+
+
+--3
+
+using System;
+using System.Data;
+using System.Data.SqlClient;
+
+namespace ado.net_dz
+{
+	internal class Program
+	{
+		static string connectionString = "Data Source=LAPTOP-8HJ85GUS\\ODESI;Initial Catalog=VegetablesAndFruitsDB;Integrated Security=True;";
+
+		static void Main(string[] args)
+		{
+			using (SqlConnection connection = new SqlConnection(connectionString))
+			{
+				try
+				{
+					connection.Open();
+					string query = "SELECT * FROM VegetablesAndFruits";
+					using (SqlCommand command = new SqlCommand(query, connection))
+					using (SqlDataReader reader = command.ExecuteReader())
+					{
+						Console.WriteLine("Вся информация из таблицы с овощами и фруктами:");
+						while (reader.Read())
+						{
+							Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Type: {reader["Type"]}, Color: {reader["Color"]}, Calories: {reader["Calories"]}");
+						}
+					}
+
+					query = "SELECT DISTINCT Name FROM VegetablesAndFruits";
+					using (SqlCommand command = new SqlCommand(query, connection))
+					using (SqlDataReader reader = command.ExecuteReader())
+					{
+						Console.WriteLine("\nall names Vegetables And Fruits :");
+						while (reader.Read())
+						{
+							Console.WriteLine(reader["Name"]);
+						}
+					}
+
+					query = "SELECT DISTINCT Color FROM VegetablesAndFruits";
+					using (SqlCommand command = new SqlCommand(query, connection))
+					using (SqlDataReader reader = command.ExecuteReader())
+					{
+						Console.WriteLine("\nall colors:");
+						while (reader.Read())
+						{
+							Console.WriteLine(reader["Color"]);
+						}
+					}
+
+					query = "SELECT MAX(Calories) FROM VegetablesAndFruits";
+					using (SqlCommand command = new SqlCommand(query, connection))
+					{
+						int maxCalories = (int)command.ExecuteScalar();
+						Console.WriteLine($"\nMax calories: {maxCalories}");
+					}
+
+					query = "SELECT MIN(Calories) FROM VegetablesAndFruits";
+					using (SqlCommand command = new SqlCommand(query, connection))
+					{
+						int minCalories = (int)command.ExecuteScalar();
+						Console.WriteLine($"Min calories: {minCalories}");
+					}
+
+					query = "SELECT AVG(Calories) FROM VegetablesAndFruits";
+					using (SqlCommand command = new SqlCommand(query, connection))
+					{
+						double avgCalories = (double)command.ExecuteScalar();
+						Console.WriteLine($"average calories: {avgCalories}");
+					}
+
+					Console.WriteLine("Підключення пройшло успішно");
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine($"Помилка підключення: {e.Message}");
+				}
+			}
+		}
+	}
+}
+
+
+
+--4
+	using (SqlConnection connection = new SqlConnection(connectionString))
+	{
+		try
+		{
+			connection.Open();
+
+			ShowVegetableCount(connection);
+			ShowFruitCount(connection);
+			ShowCountByColor(connection, "красный");
+			ShowCountByColor(connection, "желтый");
+			ShowItemsByCaloriesRange(connection, 20, 50);
+			ShowItemsByColor(connection, "желтый", "красный");
+
+			Console.WriteLine("Операции завершены успешно.");
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine($"Ошибка: {e.Message}");
+		}
+	}
+}
+
+static void ShowVegetableCount(SqlConnection connection)
+{
+	string query = "SELECT COUNT(*) FROM VegetablesAndFruits WHERE Type = 'овощ'";
+	ExecuteScalarAndPrint(connection, query, "Количество овощей: ");
+}
+
+static void ShowFruitCount(SqlConnection connection)
+{
+	string query = "SELECT COUNT(*) FROM VegetablesAndFruits WHERE Type = 'фрукт'";
+	ExecuteScalarAndPrint(connection, query, "Количество фруктов: ");
+}
+
+static void ShowCountByColor(SqlConnection connection, string color)
+{
+	string query = $"SELECT COUNT(*) FROM VegetablesAndFruits WHERE Color = '{color}'";
+	ExecuteScalarAndPrint(connection, query, $"Количество овощей и фруктов цвета '{color}': ");
+}
+
+static void ShowItemsByCaloriesRange(SqlConnection connection, int minCalories, int maxCalories)
+{
+	string query = $"SELECT * FROM VegetablesAndFruits WHERE Calories BETWEEN {minCalories} AND {maxCalories}";
+	ExecuteReaderAndPrint(connection, query, "Овощи и фрукты в указанном диапазоне калорийности:");
+}
+
+static void ShowItemsByColor(SqlConnection connection, params string[] colors)
+{
+	string joinedColors = string.Join("', '", colors);
+	string query = $"SELECT * FROM VegetablesAndFruits WHERE Color IN ('{joinedColors}')";
+	ExecuteReaderAndPrint(connection, query, "Овощи и фрукты с цветом 'желтый' или 'красный':");
+}
+
+static void ExecuteScalarAndPrint(SqlConnection connection, string query, string message)
+{
+	using (SqlCommand command = new SqlCommand(query, connection))
+	{
+		int count = Convert.ToInt32(command.ExecuteScalar());
+		Console.WriteLine($"{message}{count}");
+	}
+}
+
+static void ExecuteReaderAndPrint(SqlConnection connection, string query, string message)
+{
+	using (SqlCommand command = new SqlCommand(query, connection))
+	using (SqlDataReader reader = command.ExecuteReader())
+	{
+		Console.WriteLine(message);
+		while (reader.Read())
+		{
+			Console.WriteLine($"ID: {reader["Id"]}, Name: {reader["Name"]}, Type: {reader["Type"]}, Color: {reader["Color"]}, Calories: {reader["Calories"]}");
+		}
+	}
